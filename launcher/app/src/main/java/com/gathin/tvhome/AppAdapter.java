@@ -520,12 +520,14 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
         int tileW = h.card.getLayoutParams().width, tileH = h.card.getLayoutParams().height;
         Bitmap logo = whiteDockLogos && dockKind ? whiteLogo(e, tileW, tileH) : null;
-        h.logoRest = h.logoFocused = null;
+        h.logo = null;
         if (logo != null) {
             // A second copy at the size the focus zoom shows it, so a focused logo is drawn 1:1 too instead of stretched.
             float zoom = focusScale() * (advancedEffects ? 1.035f : 1f);
-            h.logoRest = logo;
-            h.logoFocused = zoom > 1f ? whiteLogo(e, Math.round(tileW * zoom), Math.round(tileH * zoom)) : null;
+            Bitmap big = zoom > 1f ? whiteLogo(e, Math.round(tileW * zoom), Math.round(tileH * zoom)) : null;
+            h.logo = new DualLogoDrawable(logo, big);
+            h.banner.setScaleType(ImageView.ScaleType.CENTER);
+            h.banner.setImageDrawable(h.logo);
             // The logo alone on the dock's glass; the focus glass over it shows which one is chosen. MonoLogo already
             // laid it out on a tile-shaped canvas at a common size, so it fills the card as it is.
             h.card.setBackground(null);
@@ -922,18 +924,12 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         /** Alpha of the name while the tile is not focused (always_show_names). */
         final float restNameAlpha;
         final boolean overshoot;
-        /** glass_home's white dock logo at the tile's size and at its focused (zoomed) size; null for other tiles. */
-        Bitmap logoRest, logoFocused;
+        /** glass_home's white dock logo, both sizes in one drawable; null for other tiles. */
+        DualLogoDrawable logo;
 
-        /**
-         * The logo made for this state: at rest drawn 1:1 (CENTER); focused, the larger copy fitted into the card,
-         * which the focus zoom then brings back to 1:1 on screen.
-         */
+        /** Draws the logo copy made for this state; the drawable's size stays the same, so nothing is laid out again. */
         void showLogo(boolean focused) {
-            if (logoRest == null) return;
-            boolean big = focused && logoFocused != null;
-            banner.setScaleType(big ? ImageView.ScaleType.FIT_CENTER : ImageView.ScaleType.CENTER);
-            banner.setImageBitmap(big ? logoFocused : logoRest);
+            if (logo != null) logo.setFocused(focused);
         }
 
         Holder(View v, TileListener listener, boolean animations, boolean advancedEffects,
