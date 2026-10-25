@@ -4,7 +4,8 @@
 The banners are not in the repo (they are the apps' artwork): pull them from the TV first, e.g. the APK with
 `pm path <package>` + `tools/tv.py --pull`, then the banner named by `aapt2 dump badging` (HBO Max keeps it in a
 split APK, so a crop of its tile from `tools/tv.py --screenshot` stands in). Put them in one folder as
-`<package>.png` and run:
+`<package>.png` and run (a `<package>.hires.png`, a large render of the logo on a clear background, wins over the
+banner; YouTube's comes from Wikimedia Commons, File:YouTube_Logo_2017.svg, public domain):
 
     python3 make_logos.py <banner folder>          # writes <package>.png next to this script
     python3 make_logos.py <banner folder> --sheet sheet.png   # also a preview of all logos on grey
@@ -79,8 +80,15 @@ TIZENTUBE_AS_YOUTUBE = True
 if not TIZENTUBE_AS_YOUTUBE:
     RECIPES["io.gh.reisxd.tizentube.cobalt"] = tizentube
 
-# Logos are stored this wide, so the TV only ever scales them down.
+# Logos are stored at least this wide, so the TV only ever scales them down, and at most MAX_STORE_W.
 STORE_W = 960
+MAX_STORE_W = 1920
+
+
+def logo_on_clear(a):
+    """A full-colour logo on a transparent background (a vector render): everything drawn is logo, except the near-white
+    parts, which become cut-outs, as the white play triangle in YouTube's red button."""
+    return 1 - by_whiteness(a, 200, 245)
 
 
 def make(path, recipe):
@@ -91,7 +99,10 @@ def make(path, recipe):
     alpha = alpha[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
     if alpha.shape[1] < STORE_W:
         alpha = smooth_upscale(alpha, STORE_W)
-    return white(alpha)
+    logo = white(alpha)
+    if logo.width > MAX_STORE_W:   # a large render: plenty at this size, and light for the TV to decode
+        logo = logo.resize((MAX_STORE_W, round(logo.height * MAX_STORE_W / logo.width)), Image.LANCZOS)
+    return logo
 
 
 def white(alpha):
@@ -142,6 +153,11 @@ def main():
     made = []
     for pkg, recipe in RECIPES.items():
         path = os.path.join(src, pkg + ".png")
+        # A high-resolution render of the logo itself, when there is one (YouTube's banner is only 320 px): it wins over
+        # the banner, read as a logo on a clear background.
+        hires = os.path.join(src, pkg + ".hires.png")
+        if os.path.isfile(hires):
+            path, recipe = hires, logo_on_clear
         if not os.path.isfile(path):
             print(f"missing {path}", file=sys.stderr)
             continue

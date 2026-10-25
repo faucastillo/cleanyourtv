@@ -24,3 +24,7 @@ they belong to their owners and are here only so this personal theme can draw th
 | `012.jpg` | Garganta del Diablo, Iguazú | Bernard Gagnon | CC BY-SA 4.0 | [File:Iguazú Falls 01.jpg](https://commons.wikimedia.org/wiki/File:Iguaz%C3%BA_Falls_01.jpg) |
 | `013.jpg` | Laguna Espejo, Aconcagua | Lucash | CC BY-SA 3.0 | [File:Laguna Espejo Aconcagua.jpg](https://commons.wikimedia.org/wiki/File:Laguna_Espejo_Aconcagua.jpg) |
 | `014.jpg` | Quebrada de las Conchas, Salta | Bernard Gagnon | CC BY-SA 4.0 | [File:Quebrada de las Conchas 05.jpg](https://commons.wikimedia.org/wiki/File:Quebrada_de_las_Conchas_05.jpg) |
+
+The YouTube logo (also the base of TizenTube's dock logo) is made from
+[File:YouTube_Logo_2017.svg](https://commons.wikimedia.org/wiki/File:YouTube_Logo_2017.svg) on Wikimedia Commons, marked
+public domain there (a trademark of Google LLC all the same), because the app's own TV banner is only 320 px wide.
