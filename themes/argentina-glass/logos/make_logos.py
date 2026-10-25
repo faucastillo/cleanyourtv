@@ -16,7 +16,7 @@ import os
 import sys
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -71,8 +71,16 @@ RECIPES = {
     "com.netflix.ninja": by_distance,
     "com.spotify.tv.android": by_distance,
     "com.wbd.stream": hbo,
-    "io.gh.reisxd.tizentube.cobalt": tizentube,
 }
+
+# This TV's owner wants TizenTube to read as YouTube to guests: the YouTube logo with a small TizenTube play ring as a
+# superscript, drawn as vector shapes so it stays smooth. Set to False for TizenTube's own wordmark (recipe above).
+TIZENTUBE_AS_YOUTUBE = True
+if not TIZENTUBE_AS_YOUTUBE:
+    RECIPES["io.gh.reisxd.tizentube.cobalt"] = tizentube
+
+# Logos are stored this wide, so the TV only ever scales them down.
+STORE_W = 960
 
 
 def make(path, recipe):
@@ -81,14 +89,52 @@ def make(path, recipe):
     alpha = recipe(a[..., :3]) * (a[..., 3] / 255)
     ys, xs = np.where(alpha > 0.25)
     alpha = alpha[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+    if alpha.shape[1] < STORE_W:
+        alpha = smooth_upscale(alpha, STORE_W)
+    return white(alpha)
+
+
+def white(alpha):
     out = np.zeros(alpha.shape + (4,), dtype=np.uint8)
     out[..., :3] = 255
-    out[..., 3] = np.round(alpha * 255).astype(np.uint8)
-    logo = Image.fromarray(out, "RGBA")
-    if logo.width < 480:   # small banners: upscale once here so the TV never stretches a tiny bitmap
-        f = 480 / logo.width
-        logo = logo.resize((480, max(1, round(logo.height * f))), Image.LANCZOS)
-    return logo
+    out[..., 3] = np.round(np.clip(alpha, 0, 1) * 255).astype(np.uint8)
+    return Image.fromarray(out, "RGBA")
+
+
+def smooth_upscale(alpha, width):
+    """A small banner's shape at {width} px with smooth edges: the alpha is enlarged with a soft filter, then its edge is
+    redrawn with a smoothstep around the half-way level, instead of stretching the original's stair-stepped pixels."""
+    h, w = alpha.shape
+    big = Image.fromarray(np.round(alpha * 255).astype(np.uint8), "L").resize(
+        (width, max(1, round(h * width / w))), Image.BICUBIC)
+    a = np.asarray(big) / 255
+    t = np.clip((a - 0.32) / 0.36, 0, 1)
+    return t * t * (3 - 2 * t)
+
+
+def play_ring(size):
+    """TizenTube's mark, simplified: a ring with a play triangle inside, drawn 4x larger and scaled down."""
+    k = 4
+    s = size * k
+    img = Image.new("L", (s, s), 0)
+    d = ImageDraw.Draw(img)
+    stroke = round(s * 0.12)
+    d.ellipse((stroke // 2, stroke // 2, s - stroke // 2 - 1, s - stroke // 2 - 1), outline=255, width=stroke)
+    c = s / 2
+    d.polygon([(c - s * 0.16, c - s * 0.22), (c - s * 0.16, c + s * 0.22), (c + s * 0.24, c)], fill=255)
+    return np.asarray(img.resize((size, size), Image.LANCZOS)) / 255
+
+
+def youtube_with_ring(youtube):
+    """The YouTube logo with the play ring as a superscript after it, top-aligned."""
+    yt = np.asarray(youtube)[..., 3] / 255
+    h, w = yt.shape
+    size = round(h * 0.44)
+    gap = round(h * 0.12)
+    alpha = np.zeros((h, w + gap + size))
+    alpha[:, :w] = yt
+    alpha[:size, w + gap:] = play_ring(size)
+    return white(alpha)
 
 
 def main():
@@ -103,6 +149,11 @@ def main():
         logo.save(os.path.join(HERE, pkg + ".png"), optimize=True)
         made.append((pkg, logo))
         print(f"{pkg}: {logo.size}")
+        if pkg == "com.google.android.youtube.tv" and TIZENTUBE_AS_YOUTUBE:
+            tt = youtube_with_ring(logo)
+            tt.save(os.path.join(HERE, "io.gh.reisxd.tizentube.cobalt.png"), optimize=True)
+            made.append(("io.gh.reisxd.tizentube.cobalt", tt))
+            print(f"io.gh.reisxd.tizentube.cobalt (YouTube + ring): {tt.size}")
     if "--sheet" in sys.argv:
         sheet_path = sys.argv[sys.argv.index("--sheet") + 1]
         cell_w, cell_h = 480, 270

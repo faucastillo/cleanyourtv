@@ -87,6 +87,9 @@ Theme [`themes/argentina-glass`](../themes/argentina-glass/) plus launcher code 
   (any other app in the dock gets one made on the TV from its banner). Every logo is sized to the same optical
   size (`MonoLogo.normalize`: equal bounding-box area with a gentle correction for how solid the mark is, so a
   block wordmark like Kick is not shrunk next to thin ones). `tools/theme.sh` pushes the folder.
+- **TizenTube looks like YouTube** on purpose (guests see YouTube): the YouTube logo with a small play ring as a
+  superscript (`TIZENTUBE_AS_YOUTUBE` in `logos/make_logos.py`). Logos from small banners are enlarged with
+  smooth edges (`smooth_upscale`) and stored 960 px wide, so the TV only scales them down.
 - **Rows below the dock hidden** until you press Down (`hide_grid_until_down`).
 - **Photo credits** on screen are off (`show_credits: false`); the credits live in the theme's `CREDITS.md`.
 - **Photo card** (`PhotoCard`): pictures from `my-photos/` (git-ignored), sent with `tools/photos.sh`, a new one
