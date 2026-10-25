@@ -1,0 +1,30 @@
+{
+  "dock_apps": [
+    "io.gh.reisxd.tizentube.cobalt",
+    "ar.com.flow.androidtv",
+    "com.disney.disneyplus",
+    "com.kick.mobile"
+  ],
+  "columns": 4,
+  "background_color": "#05070C",
+  "wallpaper": true,
+  "wallpaper_true_color": true,
+  "wallpaper_rotation_minutes": 60,
+  "wallpaper_order": "shuffle",
+  "wallpaper_captions": true,
+  "wallpaper_dim": 10,
+  "show_greeting": false,
+  "dock_title": false,
+  "cinematic_home": false,
+  "dock_glass": true,
+  "dock_opacity": 50,
+  "dock_even_padding": true,
+  "icon_only_buttons": true,
+  "icon_only_inputs": true,
+  "ambient_glow": false,
+  "app_glow": false,
+  "glass_style": "glass",
+  "fade_rows": true,
+  "focus_overshoot": false,
+  "advanced_effects": true
+}
