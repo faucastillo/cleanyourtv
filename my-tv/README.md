@@ -108,16 +108,31 @@ Do not use `build-and-install.sh` with option 2 active: it would see launcherx a
 
 Theme [`themes/argentina-glass`](../themes/argentina-glass/) plus launcher code under the theme key `glass_home`:
 
-- **Frosted glass**: the wallpaper is blurred once per picture at 1/8 size (`Frost`) and the dock band and the cards
-  draw the part behind them (`FrostDrawable`). No live blur, so no cost per frame.
-- **White dock logos** (`MonoLogo`): made from each app's banner; `themes/<name>/logos/<package>.png` overrides one
-  (TizenTube has a hand-made one). `tools/theme.sh` pushes that folder.
+- **Liquid glass** (`LiquidGlass`): the wallpaper is blurred once per picture at 1/8 size (`Frost`); every glass
+  surface (dock band, cards, top buttons) draws the part behind it, with a lens rim that magnifies the background,
+  specular light on the top-left and bottom-right of the edge and a thin inner top line. The focus highlight is the
+  same glass without the blur (it sits over the logo). No live blur, so no cost per frame.
+- **White dock logos** (`MonoLogo`): `themes/argentina-glass/logos/<package>.png` for TizenTube, Flow, Disney+, Kick,
+  YouTube, Netflix, Prime Video, Spotify and HBO Max, made by `logos/make_logos.py` from each app's own TV banner
+  (any other app in the dock gets one made on the TV from its banner). Every logo is sized to the same optical
+  weight (`MonoLogo.normalize`). `tools/theme.sh` pushes the folder.
+- **Rows below the dock hidden** until you press Down (`hide_grid_until_down`).
+- **Photo credits** on screen are off (`show_credits: false`); the credits live in the theme's `CREDITS.md`.
 - **Photo card** (`PhotoCard`): pictures from `my-photos/` (git-ignored), sent with `tools/photos.sh`, a new one
   every `photo_minutes`.
 - **Weather card** (`WeatherCard`, `Weather`, `WeatherIcon`): Open-Meteo for Palermo, CABA, every 30 minutes while
   Home is on screen. **This adds the `INTERNET` permission to the launcher**; `api.open-meteo.com` is the only host
   it contacts. Remove `weather` from the theme to stop it.
-- **Quieter header**: 24-hour clock, no date, small photo credit beside the top buttons.
+- **Quieter header**: 24-hour clock, no date.
+
+### Reordering apps
+
+- On the TV: focus the gear (Settings) at the top right, **hold OK**, choose **Reorder apps**. OK picks an app up,
+  the arrows move it, OK puts it down; Back (with nothing picked up) leaves and saves. The first row of four is the
+  dock (white logos on glass); the rows after it are the grid, which shows when you press Down.
+- In the theme: the order of `dock_apps` in `themes/argentina-glass/config.json`, then
+  `TV_HOST=<tv ip> tools/theme.sh themes/argentina-glass`.
 
 All of it is off unless a theme has `glass_home`; `GlassHome` holds the wiring so upstream files only got small hooks
-(`Config.overlay`, `WallpaperPlayer`, `DockDecoration`, `AppAdapter`, `MainActivity`, `ThemeFiles`, `ThemeProvider`).
+(`Config.overlay`, `WallpaperPlayer`, `DockDecoration`, `GlassView`, `AppAdapter`, `MainActivity`, `ThemeFiles`,
+`ThemeProvider`).

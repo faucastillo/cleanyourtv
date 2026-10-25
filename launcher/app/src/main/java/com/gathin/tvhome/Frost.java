@@ -23,8 +23,9 @@ import java.util.List;
 final class Frost {
     /** The blur's size relative to the screen; the shader scales it back up with bilinear filtering. */
     static final int SCALE = 8;
-    /** Box-blur radius in blur pixels; three passes approximate a Gaussian of about 40 screen pixels. */
-    private static final int RADIUS = 4;
+    /** Box-blur radius in blur pixels; two passes: liquid glass stays clearer than old-style frost. */
+    private static final int RADIUS = 3;
+    private static final int PASSES = 2;
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final Matrix matrix = new Matrix();
@@ -56,11 +57,24 @@ final class Frost {
 
     /** Fills {@code rect} (in {@code host}'s own coordinates) with the blur behind it; false when there is none. */
     boolean fill(Canvas canvas, RectF rect, float radius, View host) {
+        return fill(canvas, rect, radius, host, 1f, Paint.Style.FILL, 0f, 255);
+    }
+
+    /**
+     * The blur behind {@code rect}, magnified {@code zoom} times about the rect's centre (the liquid glass lens rim
+     * uses more than 1), filled or stroked, at {@code alpha}; false when there is no blur.
+     */
+    boolean fill(Canvas canvas, RectF rect, float radius, View host, float zoom, Paint.Style style, float strokeWidth,
+                 int alpha) {
         if (bitmap == null) return false;
         host.getLocationInWindow(location);
         matrix.setScale(scale, scale);
         matrix.postTranslate(-location[0], -location[1]);
+        if (zoom != 1f) matrix.postScale(zoom, zoom, rect.centerX(), rect.centerY());
         paint.getShader().setLocalMatrix(matrix);
+        paint.setStyle(style);
+        paint.setStrokeWidth(strokeWidth);
+        paint.setAlpha(alpha);
         canvas.drawRoundRect(rect, radius, radius, paint);
         return true;
     }
@@ -81,18 +95,19 @@ final class Frost {
             new Canvas(half).drawBitmap(source, src, new Rect(0, 0, w * 2, h * 2), new Paint(Paint.FILTER_BITMAP_FLAG));
             Bitmap out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
             Paint tone = new Paint(Paint.FILTER_BITMAP_FLAG);
-            // Glass reads livelier and keeps white text legible: a little more colour, a little less light.
+            // Liquid glass is vivid and bright, not grey frost: more colour and a little more light. The panes add their
+            // own soft shade at the bottom for the text on them.
             ColorMatrix saturation = new ColorMatrix();
-            saturation.setSaturation(1.35f);
-            ColorMatrix dim = new ColorMatrix();
-            dim.setScale(0.82f, 0.82f, 0.82f, 1f);
-            saturation.postConcat(dim);
+            saturation.setSaturation(1.45f);
+            ColorMatrix lift = new ColorMatrix();
+            lift.setScale(1.04f, 1.04f, 1.04f, 1f);
+            saturation.postConcat(lift);
             tone.setColorFilter(new ColorMatrixColorFilter(saturation));
             new Canvas(out).drawBitmap(half, null, new Rect(0, 0, w, h), tone);
             half.recycle();
             int[] pixels = new int[w * h];
             out.getPixels(pixels, 0, w, 0, 0, w, h);
-            for (int pass = 0; pass < 3; pass++) {
+            for (int pass = 0; pass < PASSES; pass++) {
                 boxBlur(pixels, w, h, RADIUS, true);
                 boxBlur(pixels, w, h, RADIUS, false);
             }

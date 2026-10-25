@@ -5,12 +5,10 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.LinearGradient;
 import android.graphics.Matrix;
 import android.graphics.Outline;
 import android.graphics.Paint;
 import android.graphics.RectF;
-import android.graphics.Shader;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Layout;
@@ -40,7 +38,7 @@ final class PhotoCard extends View {
     private final float density;
     private final float radius;
     private final Paint image = new Paint(Paint.FILTER_BITMAP_FLAG | Paint.ANTI_ALIAS_FLAG);
-    private final Paint rim = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final LiquidGlass rim;
     private final TextPaint hint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
     private final Matrix matrix = new Matrix();
     private final RectF rimRect = new RectF();
@@ -66,10 +64,9 @@ final class PhotoCard extends View {
         dir = themeDir == null ? null : new File(themeDir, DIR);
         interval = Math.max(1, minutes) * 60_000L;
         density = ctx.getResources().getDisplayMetrics().density;
-        radius = 28 * density;
+        radius = 32 * density;
         empty = new FrostDrawable(frost, this, radius, density);
-        rim.setStyle(Paint.Style.STROKE);
-        rim.setStrokeWidth(Math.max(1f, 1.5f * density));
+        rim = new LiquidGlass(frost, density);
         hint.setColor(0xD9FFFFFF);
         hint.setTextSize(16 * density);
         hint.setShadowLayer(4 * density, 0, density, 0x40000000);
@@ -112,8 +109,6 @@ final class PhotoCard extends View {
         super.onSizeChanged(w, h, oldw, oldh);
         empty.setBounds(0, 0, w, h);
         rimRect.set(0, 0, w, h);
-        rimRect.inset(rim.getStrokeWidth() / 2f, rim.getStrokeWidth() / 2f);
-        rim.setShader(new LinearGradient(0, 0, 0, h, 0x99FFFFFF, 0x26FFFFFF, Shader.TileMode.CLAMP));
         if (started && w > 0 && decodedFor != w) advance();
     }
 
@@ -215,7 +210,7 @@ final class PhotoCard extends View {
         }
         if (previous != null) drawCropped(canvas, previous, 255);
         drawCropped(canvas, current, Math.round(255 * fade));
-        canvas.drawRoundRect(rimRect, radius, radius, rim);
+        rim.drawRim(canvas, rimRect, radius);
     }
 
     private void drawCropped(Canvas canvas, Bitmap bitmap, int alpha) {

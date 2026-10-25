@@ -44,7 +44,7 @@ final class WeatherCard extends View {
         this.longitude = longitude;
         this.place = place;
         density = ctx.getResources().getDisplayMetrics().density;
-        setBackground(new FrostDrawable(frost, this, 28 * density, density));
+        setBackground(new FrostDrawable(frost, this, 32 * density, density));
         setFocusable(false);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
         Typeface light = typeface(ctx, R.string.font_light), medium = typeface(ctx, R.string.font_medium);

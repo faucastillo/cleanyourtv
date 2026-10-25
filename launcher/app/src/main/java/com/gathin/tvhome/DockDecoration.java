@@ -34,8 +34,8 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
     private final boolean singleRow;
     /** dock_band_all: in a single row, the band runs behind every app instead of the dock apps only. */
     private final boolean bandAll;
-    /** glass_home: the band shows the blurred wallpaper behind it (Frost); null keeps the plain band. */
-    private Frost frost;
+    /** glass_home: the band is liquid glass over the blurred wallpaper (Frost); null keeps the plain band. */
+    private LiquidGlass liquid;
 
     /**
      * @param translucent the cinematic shelf's band: the artwork and the glow show through it.
@@ -63,9 +63,9 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
         edge.setColor(lightGlass ? 0x38FFFFFF : translucent ? 0x26FFFFFF : 0x1FFFFFFF);
     }
 
-    /** glass_home: draw the blurred wallpaper under the band, so it reads as frosted glass. */
+    /** glass_home: draw the band as liquid glass over the blurred wallpaper. */
     void setFrost(Frost frost) {
-        this.frost = frost;
+        liquid = new LiquidGlass(frost, density);
     }
 
     /** Concentric corners: the band's radius is the tiles' radius plus the band's padding around them. */
@@ -153,7 +153,10 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
             shaderTop = rect.top;
             shaderBottom = rect.bottom;
         }
-        if (frost != null) frost.fill(c, rect, radius, parent);
+        if (liquid != null) {
+            liquid.draw(c, rect, radius, parent);
+            return;
+        }
         c.drawRoundRect(rect, radius, radius, band);
         c.drawRoundRect(rect, radius, radius, edge);
     }

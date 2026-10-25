@@ -2,7 +2,11 @@
 
 The photos in `wallpapers/` come from [Wikimedia Commons](https://commons.wikimedia.org/) (featured and quality
 images), centre-cropped to 16:9 and scaled to 1920x1080. They are **not** MIT: each keeps its own Creative Commons
-licence, and the place and author are shown on screen under the top-right buttons (`wallpaper_captions`).
+licence. This file is their attribution. The place and author can also be shown on screen beside the top-right
+buttons (`wallpaper_captions`, with `glass_home.show_credits`); this theme turns that off for a cleaner Home.
+
+The dock logos in `logos/` are the apps' own marks, whitened by `logos/make_logos.py` from each app's TV banner;
+they belong to their owners and are here only so this personal theme can draw them on the TV.
 
 | File | Place | Author | Licence | Source |
 |---|---|---|---|---|

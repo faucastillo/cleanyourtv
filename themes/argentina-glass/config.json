@@ -41,6 +41,8 @@
       "latitude": -34.5889,
       "longitude": -58.4306,
       "place": "Palermo, CABA"
-    }
+    },
+    "show_credits": false,
+    "hide_grid_until_down": true
   }
 }

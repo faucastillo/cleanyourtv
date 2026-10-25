@@ -29,6 +29,8 @@ public class GlassView extends View {
     /** glass_style rim or halo: no sheen and no fill, only the crisp rim (and, for halo, a lighter outer glow). */
     private boolean flat;
     private boolean halo;
+    /** glass_home: the liquid glass surface (tint, specular rim, inner light) instead of the white slab. */
+    private LiquidGlass liquid;
 
     public GlassView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -69,6 +71,12 @@ public class GlassView extends View {
         invalidate();
     }
 
+    /** glass_home: draw the highlight as liquid glass. No blur here: it sits over the tile it highlights. */
+    void setLiquid() {
+        liquid = new LiquidGlass(null, density).focused(true);
+        invalidate();
+    }
+
     void setRadius(float px) {
         radius = px;
         invalidate();
@@ -103,6 +111,10 @@ public class GlassView extends View {
         }
         if (flat) {
             canvas.drawRoundRect(rect, radius, radius, rim);
+            return;
+        }
+        if (liquid != null) {
+            liquid.drawSurface(canvas, rect, radius);
             return;
         }
 

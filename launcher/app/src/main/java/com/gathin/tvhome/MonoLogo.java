@@ -29,7 +29,7 @@ final class MonoLogo {
             File custom = new File(new File(themeDir, DIR), pkg + ".png");
             if (custom.isFile()) {
                 Bitmap b = BitmapFactory.decodeFile(custom.getPath());
-                if (b != null) return b;
+                if (b != null) return normalize(b);
             }
         }
         if (banner == null) return null;
@@ -47,7 +47,7 @@ final class MonoLogo {
             Bitmap logo = extract(px, false);
             if (logo == null) logo = extract(px, true);
             Log.d("TvHome.MonoLogo", pkg + (logo == null ? ": no logo" : ": " + logo.getWidth() + "x" + logo.getHeight()));
-            return logo;
+            return logo == null ? null : normalize(logo);
         } catch (RuntimeException | OutOfMemoryError e) {
             return null;
         }
@@ -89,6 +89,31 @@ final class MonoLogo {
         Bitmap trimmed = Bitmap.createBitmap(out, minX, minY, maxX - minX + 1, maxY - minY + 1);
         if (trimmed != out) out.recycle();
         return trimmed;
+    }
+
+    /** The canvas every dock logo is laid out on (the tile's 16:9), and the box and ink share that size it. */
+    static final int CANVAS_W = 480, CANVAS_H = 270;
+    static final float MAX_W = 0.72f, MAX_H = 0.46f, INK_SHARE = 0.07f;
+
+    /**
+     * Places a trimmed logo on the 16:9 canvas at a common optical weight: as large as the box allows, but no larger
+     * than the size at which its ink covers {@link #INK_SHARE} of the canvas. A heavy block wordmark (Kick) and a thin
+     * script (Disney+) then read alike instead of one filling the tile and the other looking lost.
+     */
+    static Bitmap normalize(Bitmap logo) {
+        int w = logo.getWidth(), h = logo.getHeight();
+        int[] px = new int[w * h];
+        logo.getPixels(px, 0, w, 0, 0, w, h);
+        double ink = 0;
+        for (int p : px) ink += (p >>> 24) / 255.0;
+        float scale = (float) Math.min(Math.min(CANVAS_W * MAX_W / w, CANVAS_H * MAX_H / h),
+                Math.sqrt(CANVAS_W * CANVAS_H * INK_SHARE / Math.max(1.0, ink)));
+        int sw = Math.max(1, Math.round(w * scale)), sh = Math.max(1, Math.round(h * scale));
+        Bitmap out = Bitmap.createBitmap(CANVAS_W, CANVAS_H, Bitmap.Config.ARGB_8888);
+        new Canvas(out).drawBitmap(logo, null, new android.graphics.Rect((CANVAS_W - sw) / 2, (CANVAS_H - sh) / 2,
+                (CANVAS_W - sw) / 2 + sw, (CANVAS_H - sh) / 2 + sh), new android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG));
+        logo.recycle();
+        return out;
     }
 
     /** The median colour of the banner's outer two-pixel frame, channel by channel. */

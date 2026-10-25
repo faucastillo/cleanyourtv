@@ -598,6 +598,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         adapter.setSavedOrder(Order.ranks(savedOrder, dockApps), Order.docked(savedOrder, dockApps));
         grid.setAdapter(adapter);
         glassHome = GlassHome.attach(this, root, grid, COLUMNS, frost, glassOptions, wallpaperPlayer.caption());
+        if (frost != null) glass.setLiquid();
 
         // tvOS layout: push the dock row towards the bottom of the screen, leaving room for
         // rows_below_dock grid rows under it; the rest of the grid stays below until you press Down.

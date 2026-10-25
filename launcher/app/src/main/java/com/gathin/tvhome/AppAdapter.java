@@ -509,8 +509,8 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
         Bitmap logo = whiteDockLogos && dockKind ? whiteLogo(e) : null;
         if (logo != null) {
-            // The logo alone on the dock's glass; the focus glass behind it shows which one is chosen.
-            int cardH = h.card.getLayoutParams().height, cardW = h.card.getLayoutParams().width;
+            // The logo alone on the dock's glass; the focus glass over it shows which one is chosen. MonoLogo already
+            // laid it out on a tile-shaped canvas at a common size, so it fills the card as it is.
             h.card.setBackground(null);
             // No card to lift: its raised shadow would draw an empty rectangle around the logo.
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -519,7 +519,6 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             }
             h.banner.setImageBitmap(logo);
             h.banner.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            h.banner.setPadding(Math.round(cardW * .14f), Math.round(cardH * .26f), Math.round(cardW * .14f), Math.round(cardH * .26f));
             h.banner.setVisibility(View.VISIBLE);
             h.icon.setVisibility(View.GONE);
             h.label.setVisibility(View.GONE);
