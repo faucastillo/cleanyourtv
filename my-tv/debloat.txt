@@ -1,0 +1,26 @@
+# Combined list of everything disabled on this TV, in the order it was applied (batches 1-4).
+# Hisense 50Q6 (device lushan, Google TV 12, STT2.230929.001.092). See README.md in this folder.
+# Undo all: TV_HOST=<tv ip> tools/restore.sh my-tv/debloat.txt com.google.android.apps.tv.launcherx
+
+# Hisense 50Q6 (lushan, Google TV 12, STT2.230929.001.092) - batch 1: telemetry only.
+# Same firmware as examples/hisense-smarttv-4k-ffm-lushan/.
+com.vt.tv.evservice                          # Hisense viewing-data (ACR) service
+com.google.android.partnersetup              # partner referral tracking
+com.google.android.feedback                  # crash/feedback uploader
+com.google.android.syncadapters.calendar     # calendar sync, unused on a TV
+
+# Hisense 50Q6 (lushan) - batch 2: Hisense store/demo mode, finished first-time setup, cleaner, Family Moment.
+# All from examples/hisense-smarttv-4k-ffm-lushan/.
+com.vt.storemode                             # store/hotel demo mode
+com.vt.fte                                   # first-time setup flow (setup already complete)
+com.vt.tv.protector                          # Hisense cleaner with a boot receiver
+com.vt.hishow                                # "Family Moment" screensaver and photo content
+
+# Hisense 50Q6 (lushan) - batch 3: preloaded apps the owner does not use (for now).
+com.google.android.youtube.tvmusic           # YouTube Music (owner may want it back later)
+com.vt.alexa                                 # Hisense Alexa integration, unused (Google Assistant kept)
+
+# Hisense 50Q6 (lushan) - batch 4: Google TV setup wizard. Its RecoveryActivity claims HOME once the
+# stock launcher is disabled. Wi-Fi was forgotten and re-joined first (owner now com.android.tv.settings).
+com.google.android.tungsten.setupwraith
+
