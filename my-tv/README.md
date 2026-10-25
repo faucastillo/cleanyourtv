@@ -109,13 +109,16 @@ Do not use `build-and-install.sh` with option 2 active: it would see launcherx a
 Theme [`themes/argentina-glass`](../themes/argentina-glass/) plus launcher code under the theme key `glass_home`:
 
 - **Liquid glass** (`LiquidGlass`): the wallpaper is blurred once per picture at 1/8 size (`Frost`); every glass
-  surface (dock band, cards, top buttons) draws the part behind it, with a lens rim that magnifies the background,
+  surface (dock band, cards) draws the part behind it, with a lens rim that magnifies the background,
   specular light on the top-left and bottom-right of the edge and a thin inner top line. The focus highlight is the
   same glass without the blur (it sits over the logo). No live blur, so no cost per frame.
+- **Top buttons**: only Inputs and Settings (`show_network_pill: false`), in a barely-there glass
+  (`LiquidGlass.subtle`): mostly clear, faint rim, brighter only when focused.
 - **White dock logos** (`MonoLogo`): `themes/argentina-glass/logos/<package>.png` for TizenTube, Flow, Disney+, Kick,
   YouTube, Netflix, Prime Video, Spotify and HBO Max, made by `logos/make_logos.py` from each app's own TV banner
   (any other app in the dock gets one made on the TV from its banner). Every logo is sized to the same optical
-  weight (`MonoLogo.normalize`). `tools/theme.sh` pushes the folder.
+  size (`MonoLogo.normalize`: equal bounding-box area with a gentle correction for how solid the mark is, so a
+  block wordmark like Kick is not shrunk next to thin ones). `tools/theme.sh` pushes the folder.
 - **Rows below the dock hidden** until you press Down (`hide_grid_until_down`).
 - **Photo credits** on screen are off (`show_credits: false`); the credits live in the theme's `CREDITS.md`.
 - **Photo card** (`PhotoCard`): pictures from `my-photos/` (git-ignored), sent with `tools/photos.sh`, a new one

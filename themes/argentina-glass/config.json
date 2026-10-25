@@ -44,5 +44,6 @@
     },
     "show_credits": false,
     "hide_grid_until_down": true
-  }
+  },
+  "show_network_pill": false
 }

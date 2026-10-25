@@ -283,21 +283,23 @@ final class GlassHome {
     }
 
     /**
-     * The top buttons as liquid glass: clear glass at rest, brighter glass with stronger light when focused, instead
-     * of the solid white focused pill. Their text and icons stay white on it.
+     * The top buttons as the subtle liquid glass: nearly clear at rest so they do not draw the eye, brighter glass with
+     * stronger light when focused, instead of the solid white focused pill. Their text and icons stay white on it,
+     * a little dimmed at rest.
      */
     private void liquidPills(Activity a, Frost frost) {
-        android.content.res.ColorStateList white = android.content.res.ColorStateList.valueOf(0xFFFFFFFF);
         for (int id : new int[]{R.id.btnInputs, R.id.btnWifi, R.id.btnReorder, R.id.btnLibraryTop, R.id.btnSettings}) {
             TextView pill = a.findViewById(id);
             if (pill == null) continue;
             android.graphics.drawable.StateListDrawable states = new android.graphics.drawable.StateListDrawable();
             float r = 21 * density;
-            states.addState(new int[]{android.R.attr.state_focused}, new FrostDrawable(frost, pill, r, density, true));
-            states.addState(new int[0], new FrostDrawable(frost, pill, r, density));
+            states.addState(new int[]{android.R.attr.state_focused}, new FrostDrawable(frost, pill, r, density, true, true));
+            states.addState(new int[0], new FrostDrawable(frost, pill, r, density, false, true));
             pill.setBackground(states);
-            pill.setTextColor(white);
-            pill.setCompoundDrawableTintList(white);
+            android.content.res.ColorStateList icons = new android.content.res.ColorStateList(
+                    new int[][]{{android.R.attr.state_focused}, {}}, new int[]{0xFFFFFFFF, 0xC7FFFFFF});
+            pill.setTextColor(icons);
+            pill.setCompoundDrawableTintList(icons);
         }
     }
 

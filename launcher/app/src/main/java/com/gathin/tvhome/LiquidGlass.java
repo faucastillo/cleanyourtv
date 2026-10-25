@@ -33,6 +33,8 @@ final class LiquidGlass {
     /** The rect the gradients were made for; they are rebuilt when it changes. */
     private final RectF made = new RectF();
     private boolean focused;
+    /** A barely-there pane (the top buttons): mostly clear, no lens, a faint rim; minimal, it should not call for the eye. */
+    private boolean subtle;
 
     LiquidGlass(Frost frost, float density) {
         this.frost = frost;
@@ -50,11 +52,18 @@ final class LiquidGlass {
         return this;
     }
 
+    LiquidGlass subtle(boolean on) {
+        subtle = on;
+        made.setEmpty();
+        return this;
+    }
+
     /** The whole pane: blur, lens rim, tint, shade, light. {@code host} is the view whose canvas this is. */
     void draw(Canvas c, RectF r, float radius, View host) {
-        boolean blurred = frost != null && frost.fill(c, r, radius, host, 1f, Paint.Style.FILL, 0f, 255);
-        if (!blurred) c.drawRoundRect(r, radius, radius, fallback);
-        if (blurred) {
+        int blurAlpha = !subtle ? 255 : focused ? 200 : 110;
+        boolean blurred = frost != null && frost.fill(c, r, radius, host, 1f, Paint.Style.FILL, 0f, blurAlpha);
+        if (!blurred && !subtle) c.drawRoundRect(r, radius, radius, fallback);
+        if (blurred && !subtle) {
             // The lens: the rim shows the background magnified about the pane's centre, strongest at the edge and
             // fading inwards, in three soft steps so no hard line shows.
             float lens = Math.min(LENS_DP * density, Math.min(r.width(), r.height()) / 4f);
@@ -96,14 +105,16 @@ final class LiquidGlass {
 
     private void build(RectF r) {
         made.set(r);
-        tint.setShader(new LinearGradient(0, r.top, 0, r.bottom,
-                focused ? 0x66FFFFFF : 0x24FFFFFF, focused ? 0x26FFFFFF : 0x06FFFFFF, Shader.TileMode.CLAMP));
+        int top = subtle ? (focused ? 0x33FFFFFF : 0x0AFFFFFF) : focused ? 0x66FFFFFF : 0x24FFFFFF;
+        int bottom = subtle ? (focused ? 0x14FFFFFF : 0x02FFFFFF) : focused ? 0x26FFFFFF : 0x06FFFFFF;
+        tint.setShader(new LinearGradient(0, r.top, 0, r.bottom, top, bottom, Shader.TileMode.CLAMP));
         shade.setShader(new LinearGradient(0, r.top + r.height() * 0.55f, 0, r.bottom,
-                0x00000000, focused ? 0x0D000000 : 0x1F000000, Shader.TileMode.CLAMP));
-        rim.setStrokeWidth((focused ? 1.8f : 1.3f) * density);
+                0x00000000, subtle ? 0x00000000 : focused ? 0x0D000000 : 0x1F000000, Shader.TileMode.CLAMP));
+        rim.setStrokeWidth((focused ? 1.8f : subtle ? 1f : 1.3f) * density);
         // SweepGradient starts at 3 o'clock and turns clockwise: 45 degrees is the bottom-right, 225 the top-left.
-        int bright = focused ? 0xFFFFFFFF : 0xE6FFFFFF, mid = focused ? 0x8CFFFFFF : 0x59FFFFFF,
-                dim = focused ? 0x40FFFFFF : 0x1FFFFFFF;
+        int bright = focused ? 0xFFFFFFFF : subtle ? 0x8CFFFFFF : 0xE6FFFFFF,
+                mid = focused ? 0x8CFFFFFF : subtle ? 0x2EFFFFFF : 0x59FFFFFF,
+                dim = focused ? 0x40FFFFFF : subtle ? 0x0FFFFFFF : 0x1FFFFFFF;
         SweepGradient sweep = new SweepGradient(r.centerX(), r.centerY(),
                 new int[]{mid, bright, dim, dim, mid, bright, mid, mid},
                 new float[]{0f, 0.125f, 0.3f, 0.45f, 0.55f, 0.625f, 0.8f, 1f});

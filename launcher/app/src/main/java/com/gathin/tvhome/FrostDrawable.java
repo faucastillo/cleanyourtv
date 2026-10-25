@@ -22,9 +22,14 @@ final class FrostDrawable extends Drawable {
     }
 
     FrostDrawable(Frost frost, View host, float radiusPx, float density, boolean focused) {
+        this(frost, host, radiusPx, density, focused, false);
+    }
+
+    /** {@code subtle}: the barely-there glass of the top buttons (LiquidGlass.subtle). */
+    FrostDrawable(Frost frost, View host, float radiusPx, float density, boolean focused, boolean subtle) {
         this.host = host;
         this.radius = radiusPx;
-        glass = new LiquidGlass(frost, density).focused(focused);
+        glass = new LiquidGlass(frost, density).focused(focused).subtle(subtle);
         if (frost != null) frost.register(host);
     }
 

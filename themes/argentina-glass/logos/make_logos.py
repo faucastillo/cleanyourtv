@@ -10,7 +10,7 @@ split APK, so a crop of its tile from `tools/tv.py --screenshot` stands in). Put
     python3 make_logos.py <banner folder> --sheet sheet.png   # also a preview of all logos on grey
 
 Each logo comes out white, trimmed to its ink; the launcher (MonoLogo.normalize) sizes them all to the same
-optical weight on the dock, so nothing here needs to match in size.
+optical size on the dock, so nothing here needs to match in size.
 """
 import os
 import sys
@@ -113,14 +113,16 @@ def main():
         sheet.convert("RGB").save(sheet_path)
 
 
-def normalize(logo, cw, ch, max_w=0.72, max_h=0.46, ink_share=0.07):
-    """The same rule as MonoLogo.normalize on the TV: fit the box, then even out the optical weight by ink area."""
+def normalize(logo, cw, ch, max_w=0.84, max_h=0.56, area_share=0.21, ink_ref=0.35, ink_exp=0.1):
+    """The same rule as MonoLogo.normalize on the TV: equal bounding-box area, a gentle ink correction, fit the box."""
     alpha = np.asarray(logo)[..., 3] / 255
-    ink = alpha.sum()
-    scale = min(cw * max_w / logo.width, ch * max_h / logo.height, (cw * ch * ink_share / max(ink, 1)) ** 0.5)
-    w, h = max(1, round(logo.width * scale)), max(1, round(logo.height * scale))
+    w, h = logo.size
+    solid = max(0.05, alpha.sum() / (w * h))
+    by_area = (cw * ch * area_share / (w * h)) ** 0.5 * (ink_ref / solid) ** ink_exp
+    scale = min(cw * max_w / w, ch * max_h / h, by_area)
+    nw, nh = max(1, round(w * scale)), max(1, round(h * scale))
     canvas = Image.new("RGBA", (cw, ch), (0, 0, 0, 0))
-    canvas.alpha_composite(logo.resize((w, h), Image.LANCZOS), ((cw - w) // 2, (ch - h) // 2))
+    canvas.alpha_composite(logo.resize((nw, nh), Image.LANCZOS), ((cw - nw) // 2, (ch - nh) // 2))
     return canvas
 
 
