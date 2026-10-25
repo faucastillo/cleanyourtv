@@ -60,9 +60,18 @@ final class GlassHome {
             place = w == null ? "" : w.optString("place", "");
         }
 
+        /** The theme's top-level "remote_watch" list (KeyWatcher), read with the rest; empty without it. */
+        final java.util.List<String> remoteWatch = new java.util.ArrayList<>();
+
         static Options read(Context ctx) {
             JSONObject overlay = Config.overlay(ctx);
-            return new Options(overlay == null ? null : overlay.optJSONObject("glass_home"));
+            Options options = new Options(overlay == null ? null : overlay.optJSONObject("glass_home"));
+            org.json.JSONArray watch = overlay == null ? null : overlay.optJSONArray("remote_watch");
+            for (int i = 0; watch != null && i < watch.length(); i++) {
+                String entry = watch.optString(i, "").trim();
+                if (!entry.isEmpty()) options.remoteWatch.add(entry);
+            }
+            return options;
         }
     }
 

@@ -31,63 +31,31 @@ TV_HOST=<tv ip> tools/restore.sh my-tv/debloat.txt com.google.android.apps.tv.la
 
 ## Remote buttons
 
-| Button | Scancode (`getevent -lt`) | Works now? |
-|---|---|---|
-| Netflix | - | Yes (Hisense/MediaTek receivers handle it) |
-| Input | - | Yes |
-| YouTube | 469 (`KEY_FN_F4`) | No |
-| Prime Video | 468 (`KEY_FN_F3`) | No |
-| Disney+ | 418 (`KEY_ZOOMIN`) | No |
+| Button | keycode / scancode | Does now | How |
+|---|---|---|---|
+| Netflix, Input | - | Netflix, the inputs | the firmware's own receivers |
+| Gear | 83 `NOTIFICATION` / 598 | TV Settings | KeyWatcher |
+| TV icon (Guide) | 172 `GUIDE` / 362 | Flow's TV guide, from anywhere | KeyWatcher, `content://livetv` deep link |
+| YouTube | - / 469 | YouTube | KeyWatcher |
+| Prime Video | - / 468 | Prime Video | KeyWatcher |
+| Disney+ | - / 418 | Disney+ | KeyWatcher |
+| Configurable button | - | Kick | the TV's own setting |
 
-YouTube, Prime Video and Disney+ were answered by the Google TV launcher. With it disabled they do nothing.
-This was a deliberate choice; both ways to get them back were tested on this TV and worked.
+With launcherx disabled these keys are *global keys* addressed to launcherx (`dumpsys window policy`), so they reach
+nothing. Upstream's way to catch them (`app_keys` + a key-filtering accessibility helper) makes Android 12 drop the
+volume key's auto-repeat, and keeping launcherx in the background costs ~87 MB; both were rejected.
 
-### Option 1: key helper (buttons work, volume steps once per press)
+**KeyWatcher** (this fork, theme key `remote_watch`): this firmware logs every key as
+`WindowManager: interceptKeyTq keycode=N scancode=M`. The launcher reads that log (`logcat` filtered to that tag and
+`wm_set_resumed_activity`, for per-app entries) and opens the mapped target. Nothing is filtered, so volume keeps
+ramping and the buttons work inside any app. Cost measured on Home: ~0.05 % of one core, 2.9 MB.
+Install with `KEY_WATCH=1 launcher/build-and-install.sh` (grants `READ_LOGS` and the `SYSTEM_ALERT_WINDOW` app op).
+The trade: the launcher may read the system log; it only parses those two kinds of lines and keeps nothing.
+Flow's guide link opens the guide only once Flow is running, so from a cold start KeyWatcher repeats it after 7 and
+14 s unless another button was pressed.
 
-```sh
-# themes/<name>/config.json
-{
-  "app_keys": [
-    "scan:469:com.google.android.youtube.tv",
-    "scan:468:com.amazon.amazonvideo.livingroom",
-    "scan:418:com.disney.disneyplus"
-  ]
-}
-TV_HOST=<tv ip> tools/theme.sh themes/<name>
-cd launcher && TV_HOST=<tv ip> INPUT_KEY_SERVICE=1 ./build-and-install.sh
-```
-
-Any accessibility service that filters keys makes Android 12 drop the volume key's auto-repeat: holding
-volume up moves it one step. See [`docs/devices/tcl-55p71b-g09-key-repeat.md`](../docs/devices/tcl-55p71b-g09-key-repeat.md).
-Any app package works in place of the stock ones (e.g. TizenTube for the YouTube button).
-
-### Option 2: Google TV launcher in the background (buttons and volume ramp both work)
-
-From [upstream #1292](https://github.com/Gathin23/cleanyourtv/issues/1292). The Google TV launcher stays
-enabled so its own button receiver works, and `HomeKeyService` runs **without** key filtering and sends
-its home screen back to Clean Your TV whenever it comes up.
-
-```sh
-# themes/<name>/config.json
-{
-  "key_filter": false,
-  "stock_home_redirect": "com.google.android.apps.tv.launcherx"
-}
-TV_HOST=<tv ip> tools/theme.sh themes/<name>
-TV_HOST=<tv ip> tools/tv.py "pm enable --user 0 com.google.android.apps.tv.launcherx"
-TV_HOST=<tv ip> tools/tv.py "settings put secure enabled_accessibility_services com.gathin.tvhome/.HomeKeyService; settings put secure accessibility_enabled 1"
-```
-
-Verified here: Home from inside an app and a reboot both land on Clean Your TV, and `dumpsys accessibility`
-shows the helper bound with no `KeyboardInterceptor`. Google TV profiles also work again (the chooser opens
-with `am start -a com.google.android.gms.account.ProfilePickerDelegation -n
-com.google.android.apps.tv.launcherx/.profile.chooser.ProfileChooserActivity`), but at boot the redirect
-covers the profile chooser.
-
-Cost, measured idle: about 87 MB PSS for the two launcherx processes (`launcherx` + `:coreservices`), 0 CPU
-ticks over 60 s, and background fetching of recommendations. Free RAM was 559 MB with it, 667 MB without.
-
-Do not use `build-and-install.sh` with option 2 active: it would see launcherx as Home and disable it.
+Entries: `"scan:<scancode>:<target>"`, or `"app:<package>:scan:<scancode>:<target>"` to apply only while that app is
+in front. Targets: a package, `settings`, `inputs`, `input:<id>`, or `intent:<intent URI>`.
 
 ## Known side effects
 

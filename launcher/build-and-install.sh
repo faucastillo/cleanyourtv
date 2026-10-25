@@ -213,6 +213,11 @@ enable_service() {   # appends to enabled_accessibility_services without droppin
   svc=com.gathin.tvhome/.$1
   "$PY" -I ../tools/tv.py "cmd appops set com.gathin.tvhome AUTO_START allow 2>/dev/null; cmd appops set com.gathin.tvhome APP_AUTO_START allow 2>/dev/null; appops write-settings 2>/dev/null; s=\$(settings get secure enabled_accessibility_services); case \"\$s\" in *$1*) settings put secure enabled_accessibility_services ''; settings put secure accessibility_enabled 0; sleep 1; settings put secure enabled_accessibility_services \"\$s\" ;; null|'') settings put secure enabled_accessibility_services $svc ;; *) settings put secure enabled_accessibility_services \"\$s:$svc\" ;; esac; settings put secure accessibility_enabled 1; echo $1 enabled"
 }
+# This fork: KEY_WATCH=1 lets KeyWatcher read the key lines the firmware logs (a theme's remote_watch) and open
+# apps from the background. It binds no accessibility service, so held keys keep repeating.
+if [ "${KEY_WATCH:-0}" = 1 ]; then
+  "$PY" -I ../tools/tv.py "pm grant com.gathin.tvhome android.permission.READ_LOGS; appops set com.gathin.tvhome SYSTEM_ALERT_WINDOW allow; am force-stop com.gathin.tvhome; am start -a android.intent.action.MAIN -c android.intent.category.HOME >/dev/null; echo key-watch-granted"
+fi
 if [ "${INPUT_KEY_SERVICE:-0}" = 1 ]; then enable_service InputKeyService; fi
 if [ "${HOME_KEY_SERVICE:-0}" = 1 ]; then enable_service HomeKeyService; fi
 if [ "${RESTORE_KEY_SERVICES:-0}" = 1 ]; then

@@ -9,6 +9,12 @@
 
     <!-- This fork only: glass_home's weather card reads Open-Meteo (Weather), and nothing else goes online. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- This fork only: KeyWatcher reads the key lines some firmware logs, to answer remote buttons without a
+         key-filtering helper. Granted with pm grant by build-and-install.sh KEY_WATCH=1; never requested at runtime.
+         SYSTEM_ALERT_WINDOW (an app op set there too) lets it open apps while another app is in front. -->
+    <uses-permission android:name="android.permission.READ_LOGS"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <!-- Needed since Android 10 to read the Wi-Fi network name for the network pill. Never requested at

@@ -45,5 +45,12 @@
     "show_credits": false,
     "hide_grid_until_down": true
   },
-  "show_network_pill": false
+  "show_network_pill": false,
+  "remote_watch": [
+    "scan:598:settings",
+    "scan:362:intent:content://livetv#Intent;action=android.intent.action.VIEW;package=ar.com.flow.androidtv;end",
+    "scan:469:com.google.android.youtube.tv",
+    "scan:468:com.amazon.amazonvideo.livingroom",
+    "scan:418:com.disney.disneyplus"
+  ]
 }
