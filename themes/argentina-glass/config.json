@@ -26,5 +26,21 @@
   "glass_style": "glass",
   "fade_rows": true,
   "focus_overshoot": false,
-  "advanced_effects": true
+  "advanced_effects": true,
+  "rows_below_dock": 0,
+  "glass_home": {
+    "frosted": true,
+    "dock_logos": "white",
+    "show_date": false,
+    "clock_24h": true,
+    "clock_size": 40,
+    "caption_size": 11,
+    "photo_card": true,
+    "photo_minutes": 10,
+    "weather": {
+      "latitude": -34.5889,
+      "longitude": -58.4306,
+      "place": "Palermo, CABA"
+    }
+  }
 }

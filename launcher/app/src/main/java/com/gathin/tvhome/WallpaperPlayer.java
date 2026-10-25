@@ -61,9 +61,16 @@ final class WallpaperPlayer {
     private final String latitude, longitude;
     private LocalDate sunDay;
     private int[] sun;
+    /** glass_home's frosted glass: told the blur of every picture shown; null when the theme has no glass. */
+    private final Frost frost;
 
     WallpaperPlayer(Context context, FrameLayout root, Config config) {
+        this(context, root, config, null);
+    }
+
+    WallpaperPlayer(Context context, FrameLayout root, Config config, Frost frost) {
         this.root = root;
+        this.frost = frost;
         backgroundColor = config.backgroundColor;
         files = new ArrayList<>(config.wallpapers);
         interval = config.wallpaperRotationMinutes * 60_000L;
@@ -109,7 +116,7 @@ final class WallpaperPlayer {
         File first = WallpaperRotation.find(playable, previous);
         if (first == null) first = WallpaperRotation.pick(playable, previous, order, random);
         while (first != null) {
-            Bitmap bitmap = decode(first);
+            Decoded bitmap = decode(first);
             if (bitmap != null) {
                 show(bitmap);
                 // The picture covers the whole screen: the root's plain colour under it is overdraw.
@@ -141,6 +148,7 @@ final class WallpaperPlayer {
     void releaseForMemoryPressure() {
         if (current == null) return;
         image.setImageDrawable(null);
+        if (frost != null) frost.set(null, width);
         // The renderer may still have a queued frame that references this hardware bitmap. Drop our references and
         // let Android reclaim its native buffer after rendering releases it instead of recycling it mid-frame.
         current = null;
@@ -179,11 +187,11 @@ final class WallpaperPlayer {
         File next = selected;
         loading = true;
         decoder.execute(() -> {
-            Bitmap bitmap = decode(next);
+            Decoded bitmap = decode(next);
             root.post(() -> {
                 loading = false;
                 if (closed || !active) {
-                    if (bitmap != null) bitmap.recycle();
+                    if (bitmap != null) bitmap.image.recycle();
                     return;
                 }
                 if (bitmap == null) {
@@ -259,6 +267,26 @@ final class WallpaperPlayer {
         return key.toString();
     }
 
+    /** The caption view (wallpaper_captions), or null; glass_home restyles it. */
+    TextView caption() {
+        return caption;
+    }
+
+    /** A decoded picture and, with glass_home's frost, its blur. */
+    private static final class Decoded {
+        final Bitmap image, blur;
+
+        Decoded(Bitmap image, Bitmap blur) {
+            this.image = image;
+            this.blur = blur;
+        }
+    }
+
+    private void show(Decoded decoded) {
+        show(decoded.image);
+        if (frost != null) frost.set(decoded.blur, width);
+    }
+
     /** Puts a picture on screen and releases the previous one after a frame has drawn the new one. */
     private void show(Bitmap bitmap) {
         Bitmap old = current;
@@ -269,7 +297,7 @@ final class WallpaperPlayer {
         if (old != null && old != bitmap) image.postDelayed(old::recycle, 500);
     }
 
-    private Bitmap decode(File file) {
+    private Decoded decode(File file) {
         try {
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inJustDecodeBounds = true;
@@ -291,12 +319,13 @@ final class WallpaperPlayer {
             Bitmap decoded = BitmapFactory.decodeFile(file.getPath(), options);
             if (decoded == null) return null;
             if (dimColor != 0) new Canvas(decoded).drawColor(dimColor);
+            Bitmap blur = frost != null ? Frost.make(decoded, this.width, this.height) : null;
             // One copy in GPU memory instead of a software bitmap plus its texture; the decode stays off the UI
             // thread for rotations, and Home's return no longer uploads 4-8 MB to the GPU.
             Bitmap gpu = decoded.copy(Bitmap.Config.HARDWARE, false);
-            if (gpu == null) return decoded;
+            if (gpu == null) return new Decoded(decoded, blur);
             decoded.recycle();
-            return gpu;
+            return new Decoded(gpu, blur);
         } catch (Exception | OutOfMemoryError failure) {
             return null;
         }

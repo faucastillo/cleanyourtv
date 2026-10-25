@@ -17,6 +17,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.view.KeyEvent;
@@ -34,6 +35,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -248,6 +250,24 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         setHasStableIds(true);
     }
 
+    /** glass_home dock_logos "white": the dock shows white logos on the glass instead of banners. */
+    private boolean whiteDockLogos;
+    private File logoDir;
+    private final Map<String, Bitmap> whiteLogos = new HashMap<>();
+
+    void setWhiteDockLogos(File themeDir) {
+        whiteDockLogos = true;
+        logoDir = themeDir;
+    }
+
+    /** The entry's white logo, made once per package (MonoLogo); null when its banner gives none. */
+    private Bitmap whiteLogo(Entry e) {
+        if (whiteLogos.containsKey(e.pkg)) return whiteLogos.get(e.pkg);
+        Bitmap logo = MonoLogo.of(e.banner != null ? e.banner : e.icon, e.pkg, logoDir);
+        whiteLogos.put(e.pkg, logo);
+        return logo;
+    }
+
     /**
      * Rebuilds the tiles. A shown module card stands in for every tile of its package (same component,
      * so focus follows it); hidden_apps wins over a card, and a card's package in dock_apps takes that slot.
@@ -447,6 +467,13 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
         h.card.setVisibility(View.VISIBLE);
         h.card.setFocusable(true);
+        // A recycled holder may have shown a white dock logo: back to the banner's own look.
+        h.banner.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        h.banner.setPadding(0, 0, 0, 0);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            h.card.setOutlineAmbientShadowColor(Color.BLACK);
+            h.card.setOutlineSpotShadowColor(Color.BLACK);
+        }
         h.name.setText(e.name);
         // The dock has no labels, unless always_show_names asks for them (DockDecoration then makes room in the band).
         // In a single row every tile is the dock's kind: the big title above names it.
@@ -479,6 +506,23 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             h.icon.setVisibility(View.VISIBLE);
             h.label.setText(e.label);
             h.label.setVisibility(uniformTiles ? View.GONE : View.VISIBLE);
+        }
+        Bitmap logo = whiteDockLogos && dockKind ? whiteLogo(e) : null;
+        if (logo != null) {
+            // The logo alone on the dock's glass; the focus glass behind it shows which one is chosen.
+            int cardH = h.card.getLayoutParams().height, cardW = h.card.getLayoutParams().width;
+            h.card.setBackground(null);
+            // No card to lift: its raised shadow would draw an empty rectangle around the logo.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                h.card.setOutlineAmbientShadowColor(Color.TRANSPARENT);
+                h.card.setOutlineSpotShadowColor(Color.TRANSPARENT);
+            }
+            h.banner.setImageBitmap(logo);
+            h.banner.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            h.banner.setPadding(Math.round(cardW * .14f), Math.round(cardH * .26f), Math.round(cardW * .14f), Math.round(cardH * .26f));
+            h.banner.setVisibility(View.VISIBLE);
+            h.icon.setVisibility(View.GONE);
+            h.label.setVisibility(View.GONE);
         }
         h.card.setOnClickListener(v -> launch(e));
         h.card.setOnLongClickListener(v -> {

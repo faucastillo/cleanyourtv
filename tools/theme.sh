@@ -104,6 +104,17 @@ if [ -f "$THEME/wallpapers/captions.txt" ]; then
 else
   tv "$(del wallpapers/captions.txt)" >/dev/null
 fi
+# This fork: hand-made white dock logos for glass_home (logos/<package>.png), kept beside the theme.
+if [ -d "$THEME/logos" ]; then
+  tv "mkdir -p $DIR/logos" >/dev/null 2>&1 || true
+  for LOGO in "$THEME"/logos/*.png; do
+    [ -f "$LOGO" ] || continue
+    NAME=$(basename "$LOGO")
+    [[ "$NAME" =~ ^[A-Za-z0-9_.-]+$ ]] || { echo "unsupported logo filename: $NAME" >&2; exit 1; }
+    "$PY" -I b64push.py "$LOGO" "$(stage "logos/$NAME")"
+    tv "$(put "logos/$NAME")" >/dev/null
+  done
+fi
 tv "printf '%s' '$REVISION' > $TMP-theme_revision; $(put theme_revision)" >/dev/null
 tv "$RESTART; echo applied" | tail -n 1
 echo "Theme $(basename "$THEME") is on the TV. Undo with: tools/theme.sh --reset"

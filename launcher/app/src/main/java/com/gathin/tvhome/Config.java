@@ -730,6 +730,11 @@ final class Config {
         return json;
     }
 
+    /** The theme's config.json as Config.load last read it (its kept copy), for keys a fork reads itself (GlassHome). */
+    static JSONObject overlay(Context ctx) {
+        return read(new File(ctx.getFilesDir(), FILE_NAME));
+    }
+
     private static JSONObject read(File file) {
         if (file == null || !file.isFile()) return null;
         if (file.length() > 64 * 1024) {

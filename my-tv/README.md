@@ -103,3 +103,21 @@ Do not use `build-and-install.sh` with option 2 active: it would see launcherx a
 - Hisense's `com.vt.tv.evservice` (ACR) is disabled.
 - `com.vt.tv.smartsense` logs and sends app usage (`LogReportUtils: The APPRUN map sent out`). It cannot be
   disabled safely; network-level DNS blocking is the way to cut that.
+
+## Glass Home (this fork's launcher changes)
+
+Theme [`themes/argentina-glass`](../themes/argentina-glass/) plus launcher code under the theme key `glass_home`:
+
+- **Frosted glass**: the wallpaper is blurred once per picture at 1/8 size (`Frost`) and the dock band and the cards
+  draw the part behind them (`FrostDrawable`). No live blur, so no cost per frame.
+- **White dock logos** (`MonoLogo`): made from each app's banner; `themes/<name>/logos/<package>.png` overrides one
+  (TizenTube has a hand-made one). `tools/theme.sh` pushes that folder.
+- **Photo card** (`PhotoCard`): pictures from `my-photos/` (git-ignored), sent with `tools/photos.sh`, a new one
+  every `photo_minutes`.
+- **Weather card** (`WeatherCard`, `Weather`, `WeatherIcon`): Open-Meteo for Palermo, CABA, every 30 minutes while
+  Home is on screen. **This adds the `INTERNET` permission to the launcher**; `api.open-meteo.com` is the only host
+  it contacts. Remove `weather` from the theme to stop it.
+- **Quieter header**: 24-hour clock, no date, small photo credit beside the top buttons.
+
+All of it is off unless a theme has `glass_home`; `GlassHome` holds the wiring so upstream files only got small hooks
+(`Config.overlay`, `WallpaperPlayer`, `DockDecoration`, `AppAdapter`, `MainActivity`, `ThemeFiles`, `ThemeProvider`).

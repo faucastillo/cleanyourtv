@@ -19,3 +19,8 @@ traces/
 *.aab
 launcher/hs_err_pid*.log
 launcher/replay_pid*.log
+
+# glass_home photo card: personal photos stay local (only the sample and the README are tracked)
+my-photos/*
+!my-photos/README.md
+!my-photos/sample.jpg
