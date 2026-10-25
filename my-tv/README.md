@@ -39,6 +39,7 @@ TV_HOST=<tv ip> tools/restore.sh my-tv/debloat.txt com.google.android.apps.tv.la
 | YouTube | - / 469 | YouTube | KeyWatcher |
 | Prime Video | - / 468 | Prime Video | KeyWatcher |
 | Disney+ | - / 418 | Disney+ | KeyWatcher |
+| Apps (grid) | - / 580 | TizenTube | KeyWatcher |
 | Configurable button | - | Kick | the TV's own setting |
 
 With launcherx disabled these keys are *global keys* addressed to launcherx (`dumpsys window policy`), so they reach

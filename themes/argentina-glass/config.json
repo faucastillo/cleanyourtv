@@ -51,6 +51,7 @@
     "scan:362:intent:content://livetv#Intent;action=android.intent.action.VIEW;package=ar.com.flow.androidtv;end",
     "scan:469:com.google.android.youtube.tv",
     "scan:468:com.amazon.amazonvideo.livingroom",
-    "scan:418:com.disney.disneyplus"
+    "scan:418:com.disney.disneyplus",
+    "scan:580:io.gh.reisxd.tizentube.cobalt"
   ]
 }
