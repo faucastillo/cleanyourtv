@@ -518,9 +518,14 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             h.label.setText(e.label);
             h.label.setVisibility(uniformTiles ? View.GONE : View.VISIBLE);
         }
-        Bitmap logo = whiteDockLogos && dockKind
-                ? whiteLogo(e, h.card.getLayoutParams().width, h.card.getLayoutParams().height) : null;
+        int tileW = h.card.getLayoutParams().width, tileH = h.card.getLayoutParams().height;
+        Bitmap logo = whiteDockLogos && dockKind ? whiteLogo(e, tileW, tileH) : null;
+        h.logoRest = h.logoFocused = null;
         if (logo != null) {
+            // A second copy at the size the focus zoom shows it, so a focused logo is drawn 1:1 too instead of stretched.
+            float zoom = focusScale() * (advancedEffects ? 1.035f : 1f);
+            h.logoRest = logo;
+            h.logoFocused = zoom > 1f ? whiteLogo(e, Math.round(tileW * zoom), Math.round(tileH * zoom)) : null;
             // The logo alone on the dock's glass; the focus glass over it shows which one is chosen. MonoLogo already
             // laid it out on a tile-shaped canvas at a common size, so it fills the card as it is.
             h.card.setBackground(null);
@@ -529,9 +534,7 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 h.card.setOutlineAmbientShadowColor(Color.TRANSPARENT);
                 h.card.setOutlineSpotShadowColor(Color.TRANSPARENT);
             }
-            h.banner.setImageBitmap(logo);
-            // Made at the card's pixel size: drawn 1:1, never scaled again (CENTER).
-            h.banner.setScaleType(ImageView.ScaleType.CENTER);
+            h.showLogo(focused);
             h.banner.setVisibility(View.VISIBLE);
             h.icon.setVisibility(View.GONE);
             h.label.setVisibility(View.GONE);
@@ -919,6 +922,19 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         /** Alpha of the name while the tile is not focused (always_show_names). */
         final float restNameAlpha;
         final boolean overshoot;
+        /** glass_home's white dock logo at the tile's size and at its focused (zoomed) size; null for other tiles. */
+        Bitmap logoRest, logoFocused;
+
+        /**
+         * The logo made for this state: at rest drawn 1:1 (CENTER); focused, the larger copy fitted into the card,
+         * which the focus zoom then brings back to 1:1 on screen.
+         */
+        void showLogo(boolean focused) {
+            if (logoRest == null) return;
+            boolean big = focused && logoFocused != null;
+            banner.setScaleType(big ? ImageView.ScaleType.FIT_CENTER : ImageView.ScaleType.CENTER);
+            banner.setImageBitmap(big ? logoFocused : logoRest);
+        }
 
         Holder(View v, TileListener listener, boolean animations, boolean advancedEffects,
                boolean reducedMotion, float restNameAlpha, boolean overshoot) {
@@ -959,6 +975,7 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 name.animate().cancel();
                 float scale = !animations ? 1f : advancedEffects ? 1.12f : 1.10f;
                 float s = focused ? scale : 1f;
+                showLogo(focused);
                 if (!animations) {
                     view.setScaleX(1f);
                     view.setScaleY(1f);
