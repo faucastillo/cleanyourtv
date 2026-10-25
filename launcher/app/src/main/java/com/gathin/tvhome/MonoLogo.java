@@ -23,13 +23,13 @@ final class MonoLogo {
 
     private MonoLogo() {}
 
-    /** The white logo, trimmed to its content; null when the banner is unusable (a flat colour, say). */
+    /** The white logo, trimmed to its content (fit() lays it out on a tile); null when the banner gives none. */
     static Bitmap of(Drawable banner, String pkg, File themeDir) {
         if (themeDir != null && pkg != null) {
             File custom = new File(new File(themeDir, DIR), pkg + ".png");
             if (custom.isFile()) {
                 Bitmap b = BitmapFactory.decodeFile(custom.getPath());
-                if (b != null) return normalize(b);
+                if (b != null) return b;
             }
         }
         if (banner == null) return null;
@@ -47,7 +47,7 @@ final class MonoLogo {
             Bitmap logo = extract(px, false);
             if (logo == null) logo = extract(px, true);
             Log.d("TvHome.MonoLogo", pkg + (logo == null ? ": no logo" : ": " + logo.getWidth() + "x" + logo.getHeight()));
-            return logo == null ? null : normalize(logo);
+            return logo;
         } catch (RuntimeException | OutOfMemoryError e) {
             return null;
         }
@@ -91,31 +91,49 @@ final class MonoLogo {
         return trimmed;
     }
 
-    /** The canvas every dock logo is laid out on (the tile's 16:9), the box a logo must fit, and its common size. */
-    static final int CANVAS_W = 480, CANVAS_H = 270;
+    /** The box a logo must fit in its tile, and the common size, as shares of the tile. */
     static final float MAX_W = 0.84f, MAX_H = 0.56f, AREA_SHARE = 0.21f;
     /** A gentle correction for how solid a logo is: a block wordmark a little smaller, a thin script a little larger. */
     static final float INK_REF = 0.35f, INK_EXP = 0.1f;
 
     /**
-     * Places a trimmed logo on the 16:9 canvas at a common optical size: its bounding box covers {@link #AREA_SHARE}
-     * of the canvas (so a wide wordmark and a stacked one look equally big), nudged by how much of that box is ink,
-     * and never past the box that keeps it clear of the tile's edges.
+     * The logo laid out on a {@code tileW} x {@code tileH} bitmap, the tile's own pixel size, at a common optical size:
+     * its bounding box covers {@link #AREA_SHARE} of the tile (a wide wordmark and a stacked one look equally big),
+     * nudged by how much of that box is ink, and never past the box that keeps it clear of the tile's edges. Made at
+     * the exact size so nothing scales it again on screen, and shrunk in halves (scaleDown) so its edges stay smooth.
      */
-    static Bitmap normalize(Bitmap logo) {
+    static Bitmap fit(Bitmap logo, int tileW, int tileH) {
         int w = logo.getWidth(), h = logo.getHeight();
         int[] px = new int[w * h];
         logo.getPixels(px, 0, w, 0, 0, w, h);
         double ink = 0;
         for (int p : px) ink += (p >>> 24) / 255.0;
         double solid = Math.max(0.05, ink / ((double) w * h));
-        double byArea = Math.sqrt(CANVAS_W * CANVAS_H * AREA_SHARE / ((double) w * h)) * Math.pow(INK_REF / solid, INK_EXP);
-        float scale = (float) Math.min(Math.min(CANVAS_W * MAX_W / w, CANVAS_H * MAX_H / h), byArea);
+        double byArea = Math.sqrt(tileW * (double) tileH * AREA_SHARE / ((double) w * h)) * Math.pow(INK_REF / solid, INK_EXP);
+        float scale = (float) Math.min(Math.min(tileW * MAX_W / w, tileH * MAX_H / h), byArea);
         int sw = Math.max(1, Math.round(w * scale)), sh = Math.max(1, Math.round(h * scale));
-        Bitmap out = Bitmap.createBitmap(CANVAS_W, CANVAS_H, Bitmap.Config.ARGB_8888);
-        new Canvas(out).drawBitmap(logo, null, new android.graphics.Rect((CANVAS_W - sw) / 2, (CANVAS_H - sh) / 2,
-                (CANVAS_W - sw) / 2 + sw, (CANVAS_H - sh) / 2 + sh), new android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG));
-        logo.recycle();
+        Bitmap scaled = scaleDown(logo, sw, sh);
+        Bitmap out = Bitmap.createBitmap(tileW, tileH, Bitmap.Config.ARGB_8888);
+        new Canvas(out).drawBitmap(scaled, (tileW - sw) / 2, (tileH - sh) / 2, null);
+        if (scaled != logo) scaled.recycle();
+        return out;
+    }
+
+    /**
+     * Shrinks in halves, each a filtered 2:1 step that averages the pixels it merges, then one last step to the size.
+     * A single bilinear step from three or four times larger samples only a few source pixels per output pixel, which
+     * leaves stair-stepped edges, magnified again by a 4K panel that shows the 1080p UI at twice the size.
+     */
+    static Bitmap scaleDown(Bitmap src, int w, int h) {
+        Bitmap cur = src;
+        while (cur.getWidth() / 2 >= w && cur.getHeight() / 2 >= h) {
+            Bitmap half = Bitmap.createScaledBitmap(cur, cur.getWidth() / 2, cur.getHeight() / 2, true);
+            if (cur != src) cur.recycle();
+            cur = half;
+        }
+        if (cur.getWidth() == w && cur.getHeight() == h) return cur;
+        Bitmap out = Bitmap.createScaledBitmap(cur, w, h, true);
+        if (cur != src && cur != out) cur.recycle();
         return out;
     }
 

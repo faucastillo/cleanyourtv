@@ -254,6 +254,8 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private boolean whiteDockLogos;
     private File logoDir;
     private final Map<String, Bitmap> whiteLogos = new HashMap<>();
+    /** The logos laid out at a tile's pixel size, by package and size. */
+    private final Map<String, Bitmap> fittedLogos = new HashMap<>();
 
     void setWhiteDockLogos(File themeDir) {
         whiteDockLogos = true;
@@ -261,11 +263,20 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }
 
     /** The entry's white logo, made once per package (MonoLogo); null when its banner gives none. */
-    private Bitmap whiteLogo(Entry e) {
-        if (whiteLogos.containsKey(e.pkg)) return whiteLogos.get(e.pkg);
-        Bitmap logo = MonoLogo.of(e.banner != null ? e.banner : e.icon, e.pkg, logoDir);
-        whiteLogos.put(e.pkg, logo);
-        return logo;
+    private Bitmap whiteLogo(Entry e, int tileW, int tileH) {
+        if (tileW <= 0 || tileH <= 0) return null;
+        String key = e.pkg + "@" + tileW + "x" + tileH;
+        if (fittedLogos.containsKey(key)) return fittedLogos.get(key);
+        Bitmap logo;
+        if (whiteLogos.containsKey(e.pkg)) {
+            logo = whiteLogos.get(e.pkg);
+        } else {
+            logo = MonoLogo.of(e.banner != null ? e.banner : e.icon, e.pkg, logoDir);
+            whiteLogos.put(e.pkg, logo);
+        }
+        Bitmap fitted = logo == null ? null : MonoLogo.fit(logo, tileW, tileH);
+        fittedLogos.put(key, fitted);
+        return fitted;
     }
 
     /**
@@ -507,7 +518,8 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             h.label.setText(e.label);
             h.label.setVisibility(uniformTiles ? View.GONE : View.VISIBLE);
         }
-        Bitmap logo = whiteDockLogos && dockKind ? whiteLogo(e) : null;
+        Bitmap logo = whiteDockLogos && dockKind
+                ? whiteLogo(e, h.card.getLayoutParams().width, h.card.getLayoutParams().height) : null;
         if (logo != null) {
             // The logo alone on the dock's glass; the focus glass over it shows which one is chosen. MonoLogo already
             // laid it out on a tile-shaped canvas at a common size, so it fills the card as it is.
@@ -518,7 +530,8 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 h.card.setOutlineSpotShadowColor(Color.TRANSPARENT);
             }
             h.banner.setImageBitmap(logo);
-            h.banner.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            // Made at the card's pixel size: drawn 1:1, never scaled again (CENTER).
+            h.banner.setScaleType(ImageView.ScaleType.CENTER);
             h.banner.setVisibility(View.VISIBLE);
             h.icon.setVisibility(View.GONE);
             h.label.setVisibility(View.GONE);
